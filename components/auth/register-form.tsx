@@ -119,12 +119,12 @@ export default function RegisterForm() {
               type={isVisible ? "text" : "password"}
               endContent={
                 isVisible ? (
-                  <EyeSlashIcon
+                  <EyeIcon
                     className="w-4 cursor-pointer"
                     onClick={toggleVisibility}
                   />
                 ) : (
-                  <EyeIcon
+                  <EyeSlashIcon
                     className="w-4 cursor-pointer"
                     onClick={toggleVisibility}
                   />
