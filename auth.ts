@@ -1,9 +1,17 @@
-import NextAuth from "next-auth";
+import NextAuth, { DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { LoginSchema } from "./schemas";
 import { getUserByEmail } from "./data/user";
 import { User } from "@prisma/client";
 import bcrypt from "bcryptjs";
+
+export type ExtendedUser = Omit<User, "password"> & DefaultSession["user"];
+
+declare module "next-auth" {
+  interface Session {
+    user: ExtendedUser;
+  }
+}
 
 export const {
   handlers: { GET, POST },
@@ -11,6 +19,21 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
+  callbacks: {
+    async jwt({ token, user }) {
+      if (token && user) {
+        token.user = user;
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (session && token.user) {
+        session.user = { ...session.user, ...token.user };
+      }
+      return session;
+    },
+  },
   providers: [
     Credentials({
       async authorize(credentials) {
