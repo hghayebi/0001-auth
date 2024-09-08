@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import CardWrapper from "./card-wrapper";
 import paths from "@/paths";
 import { z } from "zod";
@@ -17,10 +17,15 @@ import {
 } from "@heroicons/react/16/solid";
 import FormError from "../common/form-error";
 import FormSuccess from "../common/form-success";
+import actions from "@/actions";
 
 type RegisterFormValues = z.infer<typeof RegisterSchema>;
 
 export default function RegisterForm() {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   const [isVisible, setIsVisible] = useState(false);
   const toggleVisibility = () => setIsVisible((prev) => !prev);
 
@@ -41,7 +46,21 @@ export default function RegisterForm() {
   });
 
   const onSubmit: SubmitHandler<RegisterFormValues> = (data) => {
-    console.log(data);
+    setError("");
+    setSuccess("");
+
+    startTransition(async () => {
+      const result = await actions.register(data);
+
+      if (result?.error) {
+        setError(result.error);
+      } else if (result?.success) {
+        setSuccess(result.success);
+        setValue("name", "");
+        setValue("email", "");
+        setValue("password", "");
+      }
+    });
   };
 
   return (
@@ -58,6 +77,7 @@ export default function RegisterForm() {
           render={({ field }) => (
             <Input
               {...field}
+              isDisabled={isPending}
               variant="bordered"
               label="Name"
               placeholder="john Doe"
@@ -73,6 +93,7 @@ export default function RegisterForm() {
           render={({ field }) => (
             <Input
               {...field}
+              isDisabled={isPending}
               variant="bordered"
               label="Email"
               placeholder="johndoe@example.com"
@@ -88,6 +109,7 @@ export default function RegisterForm() {
           render={({ field }) => (
             <Input
               {...field}
+              isDisabled={isPending}
               variant="bordered"
               label="Password"
               placeholder="******"
@@ -117,6 +139,7 @@ export default function RegisterForm() {
           render={({ field }) => (
             <Input
               {...field}
+              isDisabled={isPending}
               variant="bordered"
               label="Confirm password"
               placeholder="******"
@@ -128,10 +151,11 @@ export default function RegisterForm() {
           )}
         />
 
-        <FormError message="Fear is the worst enemy!" />
-        <FormSuccess message="Fear is the worst enemy!" />
+        <FormError message={error} />
+        <FormSuccess message={success} />
         <Button
           type="submit"
+          isLoading={isPending}
           size="lg"
           fullWidth
           className="bg-foreground-800 text-background"

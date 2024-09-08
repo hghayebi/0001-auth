@@ -17,3 +17,8 @@ export const RegisterSchema = z
     message: "Password and confirm password must be equal!",
     path: ["confirmPassword"],
   });
+
+export const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1, { message: "Password can't be empty!" }),
+});
