@@ -4,7 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import Github from "next-auth/providers/github";
 import { LoginSchema } from "./schemas";
-import { getUserByEmail } from "./data/user";
+import { getUserByEmail, getUserById } from "./data/user";
 import { User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -28,7 +28,36 @@ export const {
   pages: {
     signIn: paths.login(),
   },
+
+  events: {
+    async linkAccount({ user }) {
+      const existingUser = await getUserById(user.id || "");
+
+      if (!existingUser?.emailVerified) {
+        await db.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            emailVerified: new Date(),
+          },
+        });
+      }
+    },
+  },
+
   callbacks: {
+    async signIn({ user, account }) {
+      const existingUser = await getUserById(user.id || "");
+      if (account?.provider !== "credentials") return true;
+
+      if (!existingUser || !existingUser.emailVerified) {
+        return false;
+      }
+
+      return true;
+    },
+
     async jwt({ token, user }) {
       if (token && user) {
         token.user = user;
