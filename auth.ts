@@ -9,6 +9,7 @@ import { User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import db from "./db";
+import paths from "./paths";
 
 export type ExtendedUser = Omit<User, "password"> & DefaultSession["user"];
 
@@ -24,6 +25,9 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
+  pages: {
+    signIn: paths.login(),
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (token && user) {
