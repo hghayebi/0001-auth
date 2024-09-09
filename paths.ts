@@ -14,6 +14,9 @@ const paths = {
   defaultLoginRedirect() {
     return "/settings";
   },
+  newVerification() {
+    return "/auth/new-verification";
+  },
 };
 
 export default paths;

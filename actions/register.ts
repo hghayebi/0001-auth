@@ -2,9 +2,11 @@
 
 import { createUser, getUserByEmail } from "@/data/user";
 import { RegisterSchema } from "@/schemas";
-import { User } from "@prisma/client";
+import { User, VerificationToken } from "@prisma/client";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { generateVerificationTokenByEmail } from "@/lib/tokens";
+import { sendVerificationEmail } from "@/lib/mail";
 
 type RegisterResponse =
   | { error: string; success?: undefined }
@@ -43,6 +45,25 @@ export const register = async (
   if (!user) return { error: "Error creating user!" };
 
   // TODO: Send verification token
+  let verificationToken: VerificationToken | null;
+  try {
+    verificationToken = await generateVerificationTokenByEmail(email);
+  } catch (err) {
+    if (err instanceof Error) return { error: err.message };
+    return { error: "Error generating token!" };
+  }
+  if (!verificationToken) return { error: "Error generating token!" };
 
-  return { success: "User created successfully!" };
+  // Send verification token
+  try {
+    await sendVerificationEmail(
+      verificationToken.email,
+      verificationToken.token,
+    );
+  } catch (err) {
+    if (err instanceof Error) return { error: err.message };
+    return { error: "Error sending verification email!" };
+  }
+
+  return { success: "Verification token sent successfully!" };
 };
